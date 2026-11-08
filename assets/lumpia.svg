@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="100%" height="100%">
+  <!-- Plate -->
+  <circle cx="80" cy="80" r="76" fill="#FFFDF8" stroke="#E8D7B9" stroke-width="4"/>
+  <circle cx="80" cy="80" r="66" fill="#FFF6E5"/>
+
+  <!-- Small Sweet Chili Sauce Dip Bowl -->
+  <circle cx="112" cy="52" r="22" fill="#B3261E" stroke="#7B140E" stroke-width="2.5"/>
+  <circle cx="112" cy="52" r="18" fill="#D32F2F"/>
+  <circle cx="108" cy="48" r="1.5" fill="#FFF" opacity="0.8"/>
+  <circle cx="116" cy="54" r="1.2" fill="#FFF" opacity="0.6"/>
+  <circle cx="114" cy="47" r="1" fill="#FFEB3B"/>
+
+  <!-- Golden Crispy Lumpia Rolls stacked -->
+  <!-- Lumpia 1 (bottom left) -->
+  <g transform="rotate(-25 56 94)">
+    <rect x="22" y="86" width="68" height="16" rx="8" fill="#E69500" stroke="#9E5400" stroke-width="2"/>
+    <!-- Crisp texture lines -->
+    <line x1="34" y1="89" x2="36" y2="99" stroke="#BF6B00" stroke-width="1.5"/>
+    <line x1="50" y1="88" x2="52" y2="100" stroke="#BF6B00" stroke-width="1.5"/>
+    <line x1="68" y1="89" x2="70" y2="99" stroke="#BF6B00" stroke-width="1.5"/>
+    <rect x="26" y="88" width="58" height="3" rx="1.5" fill="#FFF" opacity="0.3"/>
+  </g>
+
+  <!-- Lumpia 2 (middle) -->
+  <g transform="rotate(-10 74 84)">
+    <rect x="40" y="76" width="68" height="16" rx="8" fill="#FFAB00" stroke="#A85A00" stroke-width="2"/>
+    <line x1="52" y1="79" x2="54" y2="89" stroke="#BF6B00" stroke-width="1.5"/>
+    <line x1="68" y1="78" x2="70" y2="90" stroke="#BF6B00" stroke-width="1.5"/>
+    <line x1="86" y1="79" x2="88" y2="89" stroke="#BF6B00" stroke-width="1.5"/>
+    <rect x="44" y="78" width="58" height="3" rx="1.5" fill="#FFF" opacity="0.4"/>
+  </g>
+
+  <!-- Lumpia 3 (cut roll showing savory filling) -->
+  <g transform="rotate(20 70 70)">
+    <rect x="36" y="62" width="54" height="16" rx="8" fill="#FFB300" stroke="#A85A00" stroke-width="2"/>
+    <ellipse cx="36" cy="70" rx="4" ry="7" fill="#6D3B14" stroke="#421C00" stroke-width="1.5"/>
+    <!-- Minced carrot & onion specks -->
+    <circle cx="36" cy="68" r="1.2" fill="#FF5722"/>
+    <circle cx="36" cy="72" r="1" fill="#81C784"/>
+    <rect x="42" y="64" width="44" height="3" rx="1.5" fill="#FFF" opacity="0.4"/>
+  </g>
+
+  <!-- Parsley / Calamansi garnish -->
+  <circle cx="48" cy="116" r="12" fill="#689F38" stroke="#33691E" stroke-width="2"/>
+  <circle cx="48" cy="116" r="9" fill="#8BC34A"/>
+  <!-- Calamansi segments -->
+  <path d="M48 107 L48 125 M39 116 L57 116" stroke="#DCEDC8" stroke-width="1.2"/>
+</svg>

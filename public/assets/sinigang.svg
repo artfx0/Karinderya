@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="100%" height="100%">
+  <defs>
+    <radialGradient id="sinigangSoup" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E5A65D"/>
+      <stop offset="60%" stop-color="#C27A2F"/>
+      <stop offset="100%" stop-color="#8F480F"/>
+    </radialGradient>
+  </defs>
+  <!-- Bowl Base -->
+  <circle cx="80" cy="80" r="76" fill="#FFFDF8" stroke="#E8D7B9" stroke-width="4"/>
+  <ellipse cx="80" cy="84" rx="66" ry="54" fill="#C93500"/>
+  <ellipse cx="80" cy="80" rx="60" ry="48" fill="#F74100"/>
+  <ellipse cx="80" cy="80" rx="54" ry="42" fill="url(#sinigangSoup)"/>
+
+  <!-- Pork Belly (Liempo) with rind and fat layer -->
+  <g transform="translate(48, 54)">
+    <rect x="0" y="0" width="28" height="20" rx="5" fill="#C9846E" stroke="#5E2B1E" stroke-width="1.5"/>
+    <rect x="2" y="3" width="24" height="5" rx="2" fill="#FFE5D9"/>
+    <rect x="2" y="10" width="24" height="7" rx="2" fill="#A84C32"/>
+  </g>
+
+  <!-- Kangkong leaves / water spinach -->
+  <path d="M78 62 C70 50 82 42 95 48 C108 55 98 70 88 72 Z" fill="#2E7D32" stroke="#1B5E20" stroke-width="1.5"/>
+  <path d="M84 54 Q92 56 94 62" stroke="#66BB6A" stroke-width="1.2" fill="none"/>
+
+  <path d="M42 82 C35 72 45 68 55 72 C65 76 60 90 48 92 Z" fill="#388E3C" stroke="#1B5E20" stroke-width="1.5"/>
+
+  <!-- Radish / Labanos slice -->
+  <ellipse cx="96" cy="88" rx="14" ry="10" fill="#FFFFF0" stroke="#E0E0D0" stroke-width="2" transform="rotate(-15 96 88)"/>
+  <ellipse cx="96" cy="88" rx="8" ry="5" fill="#F0F4E8" stroke="#D0DDC0" stroke-width="1" transform="rotate(-15 96 88)"/>
+
+  <!-- Tomato wedge -->
+  <path d="M68 94 C65 85 78 82 85 88 C92 94 80 102 70 98 Z" fill="#D32F2F" stroke="#8E1414" stroke-width="1.5"/>
+  <circle cx="75" cy="92" r="2" fill="#FFCDD2"/>
+
+  <!-- Siling Haba (Green finger chili) -->
+  <path d="M80 68 Q100 66 112 74 Q105 82 85 76 Z" fill="#7CB342" stroke="#33691E" stroke-width="1.5"/>
+  <path d="M112 74 Q116 76 118 80" stroke="#33691E" stroke-width="1.5" fill="none"/>
+
+  <!-- Steam highlights -->
+  <path d="M60 76 Q68 72 74 74" stroke="#FFF" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <path d="M90 74 Q98 72 104 76" stroke="#FFF" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+</svg>

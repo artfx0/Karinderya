@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="100%" height="100%">
+  <!-- Banana leaf plate liner -->
+  <circle cx="80" cy="80" r="76" fill="#2E7D32"/>
+  <circle cx="80" cy="80" r="70" fill="#388E3C"/>
+  <path d="M80 15 Q80 80 80 145" stroke="#2E7D32" stroke-width="2.5" fill="none"/>
+
+  <!-- Steaming Rice Cup / Dome (Kanin) -->
+  <ellipse cx="80" cy="106" rx="52" ry="16" fill="#E8D7B9"/>
+  <!-- Rice Dome Base -->
+  <path d="M28 102 C28 62 48 46 80 46 C112 46 132 62 132 102 C132 116 28 116 28 102 Z" fill="#FFFDF8" stroke="#E0D4C3" stroke-width="2"/>
+  
+  <!-- Fluffy rice grain texture specks -->
+  <ellipse cx="56" cy="68" rx="4" ry="2.5" fill="#F4EADB" transform="rotate(-20 56 68)"/>
+  <ellipse cx="80" cy="58" rx="4" ry="2.5" fill="#F4EADB" transform="rotate(10 80 58)"/>
+  <ellipse cx="104" cy="68" rx="4" ry="2.5" fill="#F4EADB" transform="rotate(25 104 68)"/>
+  <ellipse cx="44" cy="84" rx="4" ry="2.5" fill="#F4EADB" transform="rotate(15 44 84)"/>
+  <ellipse cx="68" cy="82" rx="4.5" ry="3" fill="#F4EADB" transform="rotate(-15 68 82)"/>
+  <ellipse cx="94" cy="80" rx="4.5" ry="3" fill="#F4EADB" transform="rotate(30 94 80)"/>
+  <ellipse cx="116" cy="86" rx="4" ry="2.5" fill="#F4EADB" transform="rotate(-10 116 86)"/>
+  <ellipse cx="60" cy="98" rx="4" ry="2.5" fill="#F4EADB" transform="rotate(5 60 98)"/>
+  <ellipse cx="84" cy="96" rx="4.5" ry="3" fill="#F4EADB" transform="rotate(-25 84 96)"/>
+  <ellipse cx="106" cy="98" rx="4" ry="2.5" fill="#F4EADB" transform="rotate(15 106 98)"/>
+
+  <!-- Golden Fried Garlic bits on top (Sinangag topper) -->
+  <circle cx="76" cy="50" r="2.5" fill="#D48806"/>
+  <circle cx="84" cy="52" r="2" fill="#B36B00"/>
+  <circle cx="80" cy="46" r="2" fill="#D48806"/>
+  <circle cx="88" cy="48" r="1.8" fill="#FADB14"/>
+
+  <!-- Rising Steam Swirls -->
+  <path d="M60 36 C55 26 65 22 62 12" stroke="#FFF" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.65"/>
+  <path d="M80 34 C75 22 85 18 82 8" stroke="#FFF" stroke-width="2.8" stroke-linecap="round" fill="none" opacity="0.75"/>
+  <path d="M100 36 C95 26 105 22 102 12" stroke="#FFF" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.65"/>
+</svg>

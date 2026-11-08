@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="100%" height="100%">
+  <defs>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Big warm background glow -->
+  <circle cx="160" cy="110" r="90" fill="#FFC043" opacity="0.3" filter="url(#softGlow)"/>
+
+  <!-- Banana leaf bed -->
+  <ellipse cx="160" cy="148" rx="140" ry="46" fill="#2E7D32"/>
+  <ellipse cx="160" cy="146" rx="130" ry="40" fill="#388E3C" stroke="#1B5E20" stroke-width="2"/>
+  <path d="M30 146 Q160 148 290 146" stroke="#2E7D32" stroke-width="3" fill="none"/>
+
+  <!-- Steaming Rice Mound on Left -->
+  <g transform="translate(40, 60)">
+    <path d="M10 80 C10 40 25 24 55 24 C85 24 100 40 100 80 Z" fill="#FFFDF8" stroke="#E2D4BF" stroke-width="2"/>
+    <!-- Rice texture -->
+    <ellipse cx="40" cy="46" rx="4" ry="2.5" fill="#EADBC6"/>
+    <ellipse cx="68" cy="48" rx="4" ry="2.5" fill="#EADBC6"/>
+    <ellipse cx="54" cy="62" rx="4" ry="2.5" fill="#EADBC6"/>
+    <!-- Garlic topper -->
+    <circle cx="55" cy="26" r="3" fill="#D48806"/>
+    <!-- Steam -->
+    <path d="M42 16 C38 8 48 4 45 -4" stroke="#FFF" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+    <path d="M62 14 C58 6 68 2 65 -6" stroke="#FFF" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+  </g>
+
+  <!-- Traditional Palayok (Clay Pot) in Center -->
+  <g transform="translate(100, 30)">
+    <!-- Pot rim and lid handle -->
+    <ellipse cx="60" cy="100" rx="45" ry="32" fill="#B3541E" stroke="#7A3008" stroke-width="3"/>
+    <ellipse cx="60" cy="98" rx="41" ry="28" fill="#4A1C04"/>
+    <!-- Savory rich stew inside -->
+    <ellipse cx="60" cy="98" rx="38" ry="25" fill="#8B4513"/>
+    <!-- Bay leaf and chicken chunk -->
+    <path d="M50 94 Q62 88 72 96 Q60 102 50 94 Z" fill="#556B2F"/>
+    <circle cx="72" cy="96" r="8" fill="#D2691E"/>
+    <circle cx="46" cy="98" r="6" fill="#D2691E"/>
+
+    <!-- Rising fragrant steam lines -->
+    <path d="M46 72 C40 54 55 42 48 24" stroke="#FFFDF8" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.85"/>
+    <path d="M64 68 C58 48 74 38 68 18" stroke="#FFFDF8" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.9"/>
+    <path d="M82 72 C76 54 90 44 85 26" stroke="#FFFDF8" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.85"/>
+  </g>
+
+  <!-- Golden Lumpia on Right -->
+  <g transform="translate(196, 85)">
+    <!-- Lumpia 1 -->
+    <rect x="0" y="28" width="60" height="15" rx="7.5" fill="#E69500" stroke="#9E5400" stroke-width="2" transform="rotate(-15 30 35)"/>
+    <!-- Lumpia 2 -->
+    <rect x="10" y="40" width="62" height="15" rx="7.5" fill="#FFA000" stroke="#9E5400" stroke-width="2" transform="rotate(10 40 47)"/>
+    <!-- Dipping Sauce Cup -->
+    <circle cx="78" cy="22" r="14" fill="#B3261E" stroke="#680D08" stroke-width="2"/>
+    <circle cx="78" cy="22" r="11" fill="#E53935"/>
+    <!-- Calamansi -->
+    <circle cx="16" cy="56" r="10" fill="#689F38" stroke="#33691E" stroke-width="2"/>
+    <circle cx="16" cy="56" r="7.5" fill="#8BC34A"/>
+  </g>
+</svg>

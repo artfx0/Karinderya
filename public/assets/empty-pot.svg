@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="100%" height="100%">
+  <!-- Cute Sleeping Palayok (Clay pot) with Zzz -->
+  <defs>
+    <radialGradient id="sleepPot" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#C98865"/>
+      <stop offset="70%" stop-color="#A55B33"/>
+      <stop offset="100%" stop-color="#733818"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Shadow -->
+  <ellipse cx="80" cy="132" rx="52" ry="10" fill="#E8D7B9"/>
+
+  <!-- Clay Pot -->
+  <ellipse cx="80" cy="100" rx="46" ry="32" fill="url(#sleepPot)" stroke="#52260F" stroke-width="2.5"/>
+  <ellipse cx="80" cy="74" rx="36" ry="10" fill="#B36E46" stroke="#52260F" stroke-width="2.2"/>
+  <!-- Handles -->
+  <path d="M34 98 C26 98 26 108 34 108" stroke="#52260F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M126 98 C134 98 134 108 126 108" stroke="#52260F" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- Closed Sleeping Eyes (cute curved arches ^_^) -->
+  <path d="M60 96 Q66 102 72 96" stroke="#52260F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M88 96 Q94 102 100 96" stroke="#52260F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Rosy sleep blush -->
+  <ellipse cx="56" cy="102" rx="5" ry="3" fill="#E07A5F" opacity="0.6"/>
+  <ellipse cx="104" cy="102" rx="5" ry="3" fill="#E07A5F" opacity="0.6"/>
+
+  <!-- Peaceful sleeping mouth -->
+  <path d="M78 104 Q80 107 82 104" stroke="#52260F" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Nightcap on the lid handle -->
+  <g transform="rotate(-15 80 50)">
+    <path d="M68 62 L92 62 L80 32 Z" fill="#C93500" stroke="#7A1D00" stroke-width="1.8"/>
+    <circle cx="80" cy="30" r="5" fill="#FFFDF8" stroke="#E2D4BF" stroke-width="1.5"/>
+    <rect x="65" y="60" width="30" height="6" rx="3" fill="#FFFDF8" stroke="#E2D4BF" stroke-width="1.5"/>
+  </g>
+
+  <!-- Floating Zzz -->
+  <text x="110" y="55" font-family="'Fredoka', sans-serif" font-size="14" font-weight="bold" fill="#F74100" opacity="0.9">z</text>
+  <text x="120" y="42" font-family="'Fredoka', sans-serif" font-size="18" font-weight="bold" fill="#F74100" opacity="0.75">Z</text>
+  <text x="132" y="26" font-family="'Fredoka', sans-serif" font-size="22" font-weight="bold" fill="#C93500">Z</text>
+</svg>
