@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/karinderya_controller.dart';
 import '../../models/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/receipt_preview_modal.dart';
 
 class SuccessView extends StatefulWidget {
   final KarinderyaController controller;
@@ -21,6 +22,7 @@ class _SuccessViewState extends State<SuccessView> with TickerProviderStateMixin
   late Animation<double> _checkAnimation;
   late AnimationController _confettiController;
   Timer? _autoReturnTimer;
+  int _secondsLeft = 5;
 
   @override
   void initState() {
@@ -45,10 +47,16 @@ class _SuccessViewState extends State<SuccessView> with TickerProviderStateMixin
     );
     _confettiController.forward();
 
-    // Auto-return to Menu after 1500ms
-    _autoReturnTimer = Timer(const Duration(milliseconds: 1500), () {
+    // 5-second countdown timer
+    _autoReturnTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
-        widget.controller.setScreen(ScreenState.staff);
+        setState(() {
+          _secondsLeft--;
+          if (_secondsLeft <= 0) {
+            timer.cancel();
+            widget.controller.setScreen(ScreenState.staff);
+          }
+        });
       }
     });
   }
@@ -66,14 +74,34 @@ class _SuccessViewState extends State<SuccessView> with TickerProviderStateMixin
     widget.controller.setScreen(ScreenState.staff);
   }
 
+  void _openReceiptModal() {
+    _autoReturnTimer?.cancel(); // Cancel auto-return when cashier prints receipt
+    final lastOrder = widget.controller.lastCompletedOrder;
+    if (lastOrder != null) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => ReceiptPreviewModal(
+          order: lastOrder,
+          controller: widget.controller,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isKitchen = widget.controller.kitchenMode;
+    final controller = widget.controller;
+    final isKitchen = controller.kitchenMode;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
 
-    final totalPaid = widget.controller.lastTotalPaid;
-    final change = widget.controller.lastChange;
-    final orderNum = widget.controller.lastOrderNum;
+    final totalPaid = controller.lastTotalPaid;
+    final change = controller.lastChange;
+    final orderNum = controller.lastOrderNum;
+    final method = controller.lastPaymentMethod;
+    final refNum = controller.lastReferenceNumber;
+    final lastOrder = controller.lastCompletedOrder;
 
     return Scaffold(
       backgroundColor: isKitchen ? AppColors.kitchenBg : AppColors.warmCream,
@@ -105,8 +133,8 @@ class _SuccessViewState extends State<SuccessView> with TickerProviderStateMixin
                     ScaleTransition(
                       scale: reduceMotion ? const AlwaysStoppedAnimation(1.0) : _checkAnimation,
                       child: Container(
-                        width: 100,
-                        height: 100,
+                        width: 96,
+                        height: 96,
                         decoration: BoxDecoration(
                           color: AppColors.leafGreen,
                           shape: BoxShape.circle,
@@ -121,104 +149,209 @@ class _SuccessViewState extends State<SuccessView> with TickerProviderStateMixin
                         child: const Icon(
                           Icons.check_rounded,
                           color: Colors.white,
-                          size: 64,
+                          size: 60,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // "Salamat po!" in Fredoka
                     Text(
                       'Salamat po!',
                       style: GoogleFonts.fredoka(
-                        fontSize: 36,
+                        fontSize: 34,
                         fontWeight: FontWeight.bold,
                         color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
-                      'Order #$orderNum ay nai-record na bilang PAID.',
+                      'Order #$orderNum ay nai-record na sa kusina.',
+                      textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
-                        fontSize: 15,
+                        fontSize: 14,
                         color: isKitchen ? AppColors.kitchenText : AppColors.mutedBrown,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
-                    // Big Green Card: Amount Paid & Change
+                    // Payment Summary Card
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppColors.leafGreen.withValues(alpha: 0.12),
+                        color: isKitchen ? Colors.grey.shade100 : AppColors.paperCard,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: AppColors.leafGreen,
+                          color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
                           width: isKitchen ? 2.5 : 1.5,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Column(
                         children: [
+                          // Payment Method Badge
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Halagang Binayaran:',
-                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                                'Paraan ng Bayad:',
+                                style: GoogleFonts.inter(fontSize: 13, color: AppColors.mutedBrown),
                               ),
+                              _buildPaymentMethodBadge(method),
+                            ],
+                          ),
+                          const Divider(color: AppColors.line, height: 20),
+
+                          // Amount Paid
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Kabuuang Halaga:',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Text(
-                                '₱${totalPaid.toStringAsFixed(0)}',
+                                '₱${totalPaid.toStringAsFixed(2)}',
                                 style: GoogleFonts.fredoka(
-                                  fontSize: 22,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.darkBrown,
                                 ),
                               ),
                             ],
                           ),
-                          const Divider(color: AppColors.leafGreen, height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Sukli (Change to return):',
-                                style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.leafGreen,
+
+                          // If Cash: Show Change
+                          if (method == PaymentMethod.cash) ...[
+                            const Divider(color: AppColors.line, height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Sukli (Change):',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.leafGreen,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '₱${change.toStringAsFixed(0)}',
-                                style: GoogleFonts.fredoka(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.leafGreen,
+                                Text(
+                                  '₱${change.toStringAsFixed(2)}',
+                                  style: GoogleFonts.fredoka(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.leafGreen,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
+
+                          // If Digital: Show Reference Number
+                          if ((method == PaymentMethod.gcash || method == PaymentMethod.maya) &&
+                              refNum != null &&
+                              refNum.isNotEmpty) ...[
+                            const Divider(color: AppColors.line, height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Reference No:',
+                                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.mutedBrown),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    refNum,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.courierPrime(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.darkBrown,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+
+                          // If Utang: Show Customer
+                          if (method == PaymentMethod.utang && lastOrder?.customerName != null) ...[
+                            const Divider(color: AppColors.line, height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Nailista kay:',
+                                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.mutedBrown),
+                                ),
+                                Text(
+                                  lastOrder!.customerName!,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.mustard,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
 
-                    // Return Button
+                    // Primary Action 1: Print Receipt Button
                     SizedBox(
                       width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton(
+                      height: 52,
+                      child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: AppColors.darkBrown,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 2,
+                        ),
+                        onPressed: _openReceiptModal,
+                        icon: const Icon(Icons.print_outlined, size: 20),
+                        label: Text(
+                          'I-print ang Resibo',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Primary Action 2: New Order / Finish Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary, width: 2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         onPressed: _returnNow,
-                        child: Text(
-                          'Bumalik sa Menu (1.5s)',
+                        icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                        label: Text(
+                          _secondsLeft > 0 ? 'Bagong Order (${_secondsLeft}s)' : 'Bagong Order',
                           style: GoogleFonts.inter(
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -227,6 +360,59 @@ class _SuccessViewState extends State<SuccessView> with TickerProviderStateMixin
                   ],
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethodBadge(PaymentMethod method) {
+    Color color;
+    String label;
+    IconData icon;
+
+    switch (method) {
+      case PaymentMethod.cash:
+        color = AppColors.leafGreen;
+        label = 'CASH';
+        icon = Icons.payments_outlined;
+        break;
+      case PaymentMethod.gcash:
+        color = const Color(0xFF007DFE);
+        label = 'GCASH';
+        icon = Icons.account_balance_wallet_outlined;
+        break;
+      case PaymentMethod.maya:
+        color = const Color(0xFF00B14F);
+        label = 'MAYA';
+        icon = Icons.qr_code_scanner;
+        break;
+      case PaymentMethod.utang:
+        color = AppColors.mustard;
+        label = 'UTANG';
+        icon = Icons.menu_book_outlined;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
           ),
         ],

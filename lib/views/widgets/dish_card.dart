@@ -199,12 +199,14 @@ class DishCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        isSoldOut ? '0 left' : '${dish.stock} left',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isSoldOut ? AppColors.chiliRed : barColor,
+                      Expanded(
+                        child: Text(
+                          isSoldOut ? '0 left' : '${dish.stock} left',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isSoldOut ? AppColors.chiliRed : barColor,
+                          ),
                         ),
                       ),
                       Text(
@@ -254,12 +256,15 @@ class DishCard extends StatelessWidget {
                             color: isSoldOut ? AppColors.chiliRed : AppColors.leafGreen,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            isSoldOut ? 'Mark Available' : 'Mark Sold Out',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isSoldOut ? AppColors.chiliRed : AppColors.leafGreen,
+                          Flexible(
+                            child: Text(
+                              isSoldOut ? 'Available' : 'Sold Out',
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isSoldOut ? AppColors.chiliRed : AppColors.leafGreen,
+                              ),
                             ),
                           ),
                         ],
@@ -331,14 +336,18 @@ class DishCard extends StatelessWidget {
                                 onPressed: () => _handleAddToCart(context),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.add, size: 22),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Add to order',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                    const Icon(Icons.add, size: 20),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        'Add',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ],

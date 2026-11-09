@@ -154,14 +154,18 @@ class _MenuTabViewState extends State<MenuTabView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Today's Menu",
-                        style: GoogleFonts.fredoka(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                      Expanded(
+                        child: Text(
+                          "Today's Menu",
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.fredoka(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(

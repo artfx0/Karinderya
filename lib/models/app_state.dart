@@ -32,6 +32,13 @@ enum PaymentStatus {
   onDebt,
 }
 
+enum PaymentMethod {
+  cash,
+  gcash,
+  maya,
+  utang,
+}
+
 enum OrderKind {
   dineIn,
   takeout,

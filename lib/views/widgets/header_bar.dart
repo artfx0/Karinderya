@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,29 +6,63 @@ import '../../controllers/karinderya_controller.dart';
 import '../../models/app_state.dart';
 import '../../theme/app_theme.dart';
 
-class HeaderBar extends StatelessWidget {
+class HeaderBar extends StatefulWidget {
   final KarinderyaController controller;
 
   const HeaderBar({super.key, required this.controller});
 
-  String _getTimeGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) {
-      return 'Magandang umaga!';
-    } else if (hour < 13) {
-      return 'Magandang tanghali!';
-    } else if (hour < 18) {
-      return 'Magandang hapon!';
-    } else {
-      return 'Magandang gabi!';
-    }
+  @override
+  State<HeaderBar> createState() => _HeaderBarState();
+}
+
+class _HeaderBarState extends State<HeaderBar> {
+  Timer? _clockTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Update live Philippine clock every second
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _clockTimer?.cancel();
+    super.dispose();
+  }
+
+  DateTime get _philippineTime => DateTime.now().toUtc().add(const Duration(hours: 8));
+
+  String _formatPhilippineClock(DateTime dt) {
+    int hour = dt.hour;
+    final String period = hour >= 12 ? 'PM' : 'AM';
+    if (hour > 12) hour -= 12;
+    if (hour == 0) hour = 12;
+
+    final String hourStr = hour.toString().padLeft(2, '0');
+    final String minStr = dt.minute.toString().padLeft(2, '0');
+    final String secStr = dt.second.toString().padLeft(2, '0');
+
+    return '$hourStr:$minStr:$secStr $period';
+  }
+
+  String _formatPhilippineDate(DateTime dt) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final dayName = days[dt.weekday - 1];
+    final monthName = months[dt.month - 1];
+    return '$dayName, $monthName ${dt.day}';
   }
 
   void _showNotificationsSheet(BuildContext context) {
-    final lowStock = controller.lowStockDishes;
-    final readyOrders = controller.readyOrders;
+    final lowStock = widget.controller.lowStockDishes;
+    final readyOrders = widget.controller.readyOrders;
     final totalAlerts = lowStock.length + readyOrders.length;
-    final isKitchen = controller.kitchenMode;
+    final isKitchen = widget.controller.kitchenMode;
 
     showModalBottomSheet(
       context: context,
@@ -217,12 +252,18 @@ class HeaderBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     final isKitchen = controller.kitchenMode;
     final totalAlerts = controller.lowStockDishes.length + controller.readyOrders.length;
-    final roleName = controller.role == UserRole.owner ? 'Aling Nena / Owner' : 'Ana / Staff';
+    final staffName = controller.currentStaffName;
+    final roleName = controller.role == UserRole.owner ? 'Owner' : 'Staff';
+
+    final phtNow = _philippineTime;
+    final formattedTime = _formatPhilippineClock(phtNow);
+    final formattedDate = _formatPhilippineDate(phtNow);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       decoration: BoxDecoration(
         color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
         border: Border(
@@ -234,106 +275,170 @@ class HeaderBar extends StatelessWidget {
       ),
       child: SafeArea(
         bottom: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Store Title & Time Greeting
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            // Row 1: Brand Title & Staff Tag (Left) + Top Actions (Right)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'Karinderya',
-                      style: GoogleFonts.fredoka(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _getTimeGreeting(),
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                // Store Title & Cashier Info
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Karinderya',
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.fredoka(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          roleName.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Top Action Icons (Kitchen Mode + Notifications)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(),
+                      onPressed: () => controller.toggleKitchenMode(),
+                      icon: Icon(
+                        isKitchen ? Icons.wb_sunny : Icons.wb_sunny_outlined,
+                        color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                        size: 20,
+                      ),
+                      tooltip: 'Kitchen Mode',
+                    ),
+                    const SizedBox(width: 6),
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        IconButton(
+                          padding: const EdgeInsets.all(6),
+                          constraints: const BoxConstraints(),
+                          onPressed: () => _showNotificationsSheet(context),
+                          icon: Icon(
+                            Icons.notifications_none_rounded,
+                            color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                            size: 20,
+                          ),
+                          tooltip: 'Mga Alerto',
+                        ),
+                        if (totalAlerts > 0)
+                          Positioned(
+                            right: 2,
+                            top: 2,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: const BoxDecoration(
+                                color: AppColors.chiliRed,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '$totalAlerts',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  "Aling Nena's - $roleName",
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: isKitchen ? AppColors.kitchenText : AppColors.mutedBrown,
-                    fontWeight: FontWeight.w500,
-                  ),
                 ),
               ],
             ),
+            const SizedBox(height: 8),
 
-            // Top Action Icons (Kitchen Mode + Notifications)
-            Row(
-              children: [
-                // Kitchen Mode Toggle (Sun icon)
-                IconButton(
-                  onPressed: () => controller.toggleKitchenMode(),
-                  icon: Icon(
-                    isKitchen ? Icons.wb_sunny : Icons.wb_sunny_outlined,
-                    color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
-                    size: 24,
-                  ),
-                  tooltip: 'Kitchen Mode',
+            // Row 2: Sub-bar with Store/Cashier name (Left) and Live Philippine Wall Clock Badge (Right)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: isKitchen ? Colors.grey.shade100 : AppColors.warmCream,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                  width: isKitchen ? 1.5 : 1,
                 ),
-
-                // Notifications Bell
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    IconButton(
-                      onPressed: () => _showNotificationsSheet(context),
-                      icon: Icon(
-                        Icons.notifications_none_rounded,
-                        color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
-                        size: 24,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Store & Cashier
+                  Flexible(
+                    child: Text(
+                      "Aling Nena's • $staffName",
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: isKitchen ? AppColors.kitchenText : AppColors.mutedBrown,
+                        fontWeight: FontWeight.w600,
                       ),
-                      tooltip: 'Mga Alerto',
                     ),
-                    if (totalAlerts > 0)
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: AppColors.chiliRed,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '$totalAlerts',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Live Philippine Wall Clock Badge (PST, UTC+8)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.leafGreen,
+                          shape: BoxShape.circle,
                         ),
                       ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 5),
+                      Text(
+                        formattedTime,
+                        style: GoogleFonts.fredoka(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '• $formattedDate PST',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.mutedBrown,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),

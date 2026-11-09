@@ -6,10 +6,11 @@ import '../../theme/app_theme.dart';
 import '../sheets/new_order_sheet.dart';
 import '../widgets/floating_cart_bar.dart';
 import '../widgets/header_bar.dart';
-import 'account_tab_view.dart';
 import 'menu_tab_view.dart';
+import 'order_history_view.dart';
 import 'orders_tab_view.dart';
-import 'staff_utang_tab_view.dart';
+import 'shift_summary_view.dart';
+import 'staff_settings_view.dart';
 
 class StaffDashboardView extends StatelessWidget {
   final KarinderyaController controller;
@@ -29,16 +30,30 @@ class StaffDashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isKitchen = controller.kitchenMode;
-    final currentIndex = controller.staffTabIndex;
+    final currentIndex = controller.staffTabIndex.clamp(0, 4);
     final activeOrdersCount = controller.getOrderCountByStatus(OrderStatus.preparing) +
         controller.getOrderCountByStatus(OrderStatus.ready);
 
     return Scaffold(
       backgroundColor: isKitchen ? AppColors.kitchenBg : AppColors.warmCream,
+      floatingActionButton: currentIndex == 0
+          ? FloatingActionButton.extended(
+              onPressed: () => _openNewOrderSheet(context),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              icon: const Icon(Icons.add_shopping_cart, size: 20),
+              label: Text(
+                'Bagong Order',
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         child: Column(
           children: [
-            // Top Header Bar
+            // Top Header Bar with Live Philippine Standard Time (PST) Clock
             HeaderBar(controller: controller),
 
             // Tab Body with Stack for Floating Cart Bar
@@ -51,9 +66,9 @@ class StaffDashboardView extends StatelessWidget {
                     children: [
                       MenuTabView(controller: controller),
                       OrdersTabView(controller: controller),
-                      const SizedBox.shrink(), // Center button placeholder
-                      StaffUtangTabView(controller: controller),
-                      AccountTabView(controller: controller),
+                      OrderHistoryView(controller: controller),
+                      ShiftSummaryView(controller: controller),
+                      StaffSettingsView(controller: controller),
                     ],
                   ),
 
@@ -71,7 +86,7 @@ class StaffDashboardView extends StatelessWidget {
         ),
       ),
 
-      // Ergonomic Bottom Navigation Bar
+      // 5-Tab Ergonomic Bottom Navigation Bar
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
@@ -94,7 +109,7 @@ class StaffDashboardView extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: SizedBox(
-            height: 64,
+            height: 68,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -107,7 +122,7 @@ class StaffDashboardView extends StatelessWidget {
                   isKitchen: isKitchen,
                 ),
 
-                // 2. Orders Tab
+                // 2. Active Orders Tab
                 _buildNavItem(
                   icon: currentIndex == 1 ? Icons.receipt_long : Icons.receipt_long_outlined,
                   label: 'Orders',
@@ -117,40 +132,28 @@ class StaffDashboardView extends StatelessWidget {
                   isKitchen: isKitchen,
                 ),
 
-                // 3. New Order Button (Raised Center Orange Circle)
-                GestureDetector(
-                  onTap: () => _openNewOrderSheet(context),
-                  child: Container(
-                    width: 54,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 30),
-                  ),
+                // 3. Order History Tab
+                _buildNavItem(
+                  icon: currentIndex == 2 ? Icons.history : Icons.history_outlined,
+                  label: 'History',
+                  isSelected: currentIndex == 2,
+                  onTap: () => controller.setStaffTabIndex(2),
+                  isKitchen: isKitchen,
                 ),
 
-                // 4. Utang Tab
+                // 4. Shift Summary Tab
                 _buildNavItem(
-                  icon: currentIndex == 3 ? Icons.menu_book : Icons.menu_book_outlined,
-                  label: 'Utang',
+                  icon: currentIndex == 3 ? Icons.account_balance_wallet : Icons.account_balance_wallet_outlined,
+                  label: 'Shift',
                   isSelected: currentIndex == 3,
                   onTap: () => controller.setStaffTabIndex(3),
                   isKitchen: isKitchen,
                 ),
 
-                // 5. Account Tab
+                // 5. Settings Tab
                 _buildNavItem(
-                  icon: currentIndex == 4 ? Icons.person : Icons.person_outline,
-                  label: 'Account',
+                  icon: currentIndex == 4 ? Icons.settings : Icons.settings_outlined,
+                  label: 'Settings',
                   isSelected: currentIndex == 4,
                   onTap: () => controller.setStaffTabIndex(4),
                   isKitchen: isKitchen,
@@ -175,54 +178,55 @@ class StaffDashboardView extends StatelessWidget {
         ? AppColors.primary
         : (isKitchen ? AppColors.kitchenText : AppColors.mutedBrown);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 54, minHeight: 48),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(icon, color: color, size: 24),
-                if (badgeCount != null)
-                  Positioned(
-                    right: -8,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: const BoxDecoration(
-                        color: AppColors.chiliRed,
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
-                      ),
-                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                      child: Text(
-                        '$badgeCount',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, color: color, size: 24),
+                  if (badgeCount != null)
+                    Positioned(
+                      right: -8,
+                      top: -4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: const BoxDecoration(
+                          color: AppColors.chiliRed,
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        child: Text(
+                          '$badgeCount',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: color,
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

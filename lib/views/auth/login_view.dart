@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../controllers/karinderya_controller.dart';
-import '../../models/app_state.dart';
 import '../../models/seed_data.dart';
 import '../../theme/app_theme.dart';
 
@@ -15,17 +15,22 @@ class LoginView extends StatefulWidget {
   State<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMixin {
+class _LoginViewState extends State<LoginView>
+    with SingleTickerProviderStateMixin {
   late AnimationController _steamController;
   late Animation<double> _steamAnimation;
 
-  final TextEditingController _emailController = TextEditingController(text: SeedData.demoStaffEmail);
-  final TextEditingController _passwordController = TextEditingController(text: SeedData.demoStaffPassword);
+  final TextEditingController _emailController = TextEditingController(
+    text: SeedData.demoStaffEmail,
+  );
+  final TextEditingController _passwordController = TextEditingController(
+    text: SeedData.demoStaffPassword,
+  );
 
-  UserRole _selectedDemoRole = UserRole.staff;
   bool _obscurePassword = true;
   String? _emailError;
   String? _passwordError;
+  String? _authError;
 
   @override
   void initState() {
@@ -61,32 +66,25 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
     }
   }
 
-  void _onRoleToggle(UserRole role) {
-    setState(() {
-      _selectedDemoRole = role;
-      _emailError = null;
-      _passwordError = null;
-      if (role == UserRole.staff) {
-        _emailController.text = SeedData.demoStaffEmail;
-        _passwordController.text = SeedData.demoStaffPassword;
-      } else {
-        _emailController.text = SeedData.demoOwnerEmail;
-        _passwordController.text = SeedData.demoOwnerPassword;
-      }
-    });
-  }
-
   void _handleLogin() {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     setState(() {
-      _emailError = email.isEmpty || !email.contains('@') ? 'Paki-check po ang email address.' : null;
+      _emailError = email.isEmpty || !email.contains('@')
+          ? 'Paki-check po ang email address.'
+          : null;
       _passwordError = password.isEmpty ? 'Ilagay po ang password.' : null;
+      _authError = null;
     });
 
-    if (_emailError == null && _passwordError == null) {
-      widget.controller.login(_selectedDemoRole);
+    if (_emailError != null || _passwordError != null) return;
+
+    final success = widget.controller.loginWithCredentials(email, password);
+    if (!success) {
+      setState(() {
+        _authError = 'Maling email o password. Paki-subukan muli.';
+      });
     }
   }
 
@@ -98,10 +96,14 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: widget.controller.kitchenMode ? Colors.white : AppColors.paperCard,
+            color: widget.controller.kitchenMode
+                ? Colors.white
+                : AppColors.paperCard,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border.all(
-              color: widget.controller.kitchenMode ? AppColors.kitchenBorder : AppColors.line,
+              color: widget.controller.kitchenMode
+                  ? AppColors.kitchenBorder
+                  : AppColors.line,
               width: widget.controller.kitchenMode ? 2.5 : 1.0,
             ),
           ),
@@ -142,7 +144,9 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(26),
+                    ),
                   ),
                   onPressed: () => Navigator.pop(context),
                   child: Text(
@@ -170,10 +174,14 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: widget.controller.kitchenMode ? Colors.white : AppColors.paperCard,
+            color: widget.controller.kitchenMode
+                ? Colors.white
+                : AppColors.paperCard,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border.all(
-              color: widget.controller.kitchenMode ? AppColors.kitchenBorder : AppColors.line,
+              color: widget.controller.kitchenMode
+                  ? AppColors.kitchenBorder
+                  : AppColors.line,
               width: widget.controller.kitchenMode ? 2.5 : 1.0,
             ),
           ),
@@ -199,7 +207,7 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
               ),
               const SizedBox(height: 12),
               Text(
-                'Ask your owner for an invite. Sila po ang magdaragdag ng inyong pangalan sa Staff list.',
+                'Ask your owner for an invite. Sila po ang magdaragdag ng inyong account sa Staff list.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 15,
@@ -214,7 +222,9 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(26),
+                    ),
                   ),
                   onPressed: () => Navigator.pop(context),
                   child: Text(
@@ -231,21 +241,6 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
           ),
         );
       },
-    );
-  }
-
-  void _showSocialToast(String provider) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Hindi pa available ang sign-in na ito ($provider).',
-          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-        backgroundColor: AppColors.darkBrown,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
     );
   }
 
@@ -267,17 +262,20 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                   // Hero Header Section
                   Stack(
                     children: [
-                      // Orange Hero Container
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.fromLTRB(20, 48, 20, 40),
                         decoration: BoxDecoration(
-                          color: isKitchen ? AppColors.kitchenBorder : AppColors.brandOrange,
+                          color: isKitchen
+                              ? AppColors.kitchenBorder
+                              : AppColors.brandOrange,
                           boxShadow: isKitchen
                               ? null
                               : [
                                   BoxShadow(
-                                    color: AppColors.brandOrange.withValues(alpha: 0.3),
+                                    color: AppColors.brandOrange.withValues(
+                                      alpha: 0.3,
+                                    ),
                                     blurRadius: 16,
                                     offset: const Offset(0, 6),
                                   ),
@@ -297,16 +295,20 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                                     color: AppColors.warmCream,
                                   ),
                                 ),
-                                // Kitchen Mode Pill Toggle
                                 IconButton.filledTonal(
-                                  onPressed: () => widget.controller.toggleKitchenMode(),
+                                  onPressed: () =>
+                                      widget.controller.toggleKitchenMode(),
                                   style: IconButton.styleFrom(
-                                    backgroundColor: Colors.white.withValues(alpha: 0.25),
+                                    backgroundColor: Colors.white.withValues(
+                                      alpha: 0.25,
+                                    ),
                                     foregroundColor: Colors.white,
                                     minimumSize: const Size(48, 48),
                                   ),
                                   icon: Icon(
-                                    isKitchen ? Icons.wb_sunny : Icons.wb_sunny_outlined,
+                                    isKitchen
+                                        ? Icons.wb_sunny
+                                        : Icons.wb_sunny_outlined,
                                     color: Colors.white,
                                   ),
                                   tooltip: 'Kitchen Mode',
@@ -320,13 +322,18 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                               animation: _steamController,
                               builder: (context, child) {
                                 return Transform.translate(
-                                  offset: Offset(0, reduceMotion ? 0 : _steamAnimation.value),
+                                  offset: Offset(
+                                    0,
+                                    reduceMotion ? 0 : _steamAnimation.value,
+                                  ),
                                   child: child,
                                 );
                               },
                               child: Container(
                                 height: 130,
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                                 child: SvgPicture.asset(
                                   'assets/hero-art.svg',
                                   fit: BoxFit.contain,
@@ -346,7 +353,9 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                           clipper: _WaveClipper(),
                           child: Container(
                             height: 24,
-                            color: isKitchen ? AppColors.kitchenBg : AppColors.warmCream,
+                            color: isKitchen
+                                ? AppColors.kitchenBg
+                                : AppColors.warmCream,
                           ),
                         ),
                       ),
@@ -355,7 +364,10 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
 
                   // Greeting & Subtitle
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -364,52 +376,60 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                           style: GoogleFonts.fredoka(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                            color: isKitchen
+                                ? AppColors.kitchenText
+                                : AppColors.darkBrown,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "Log in. Let's serve something good.",
+                          "Mag-login upang simulan ang POS at pagtitinda.",
                           style: GoogleFonts.inter(
                             fontSize: 15,
-                            color: isKitchen ? AppColors.kitchenText : AppColors.mutedBrown,
+                            color: isKitchen
+                                ? AppColors.kitchenText
+                                : AppColors.mutedBrown,
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
 
-                        // Role Switcher Toggle
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: isKitchen ? Colors.grey.shade100 : Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
-                              width: isKitchen ? 2 : 1,
+                        // Auth Error Banner (if incorrect credentials)
+                        if (_authError != null) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.chiliRed.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppColors.chiliRed.withValues(
+                                  alpha: 0.3,
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: AppColors.chiliRed,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _authError!,
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.chiliRed,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _buildRoleTab(
-                                  role: UserRole.staff,
-                                  title: 'Staff Demo',
-                                  isSelected: _selectedDemoRole == UserRole.staff,
-                                  isKitchen: isKitchen,
-                                ),
-                              ),
-                              Expanded(
-                                child: _buildRoleTab(
-                                  role: UserRole.owner,
-                                  title: 'Owner Demo',
-                                  isSelected: _selectedDemoRole == UserRole.owner,
-                                  isKitchen: isKitchen,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 16),
+                        ],
 
                         // Email Field
                         Text(
@@ -417,7 +437,9 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                            color: isKitchen
+                                ? AppColors.kitchenText
+                                : AppColors.darkBrown,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -426,31 +448,48 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                           keyboardType: TextInputType.emailAddress,
                           style: GoogleFonts.inter(
                             fontSize: 15,
-                            color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                            color: isKitchen
+                                ? AppColors.kitchenText
+                                : AppColors.darkBrown,
                           ),
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: isKitchen ? Colors.white : AppColors.paperCard,
+                            fillColor: isKitchen
+                                ? Colors.white
+                                : AppColors.paperCard,
                             hintText: 'halimbawa@karinderya.ph',
-                            prefixIcon: const Icon(Icons.email_outlined, color: AppColors.mutedBrown),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            prefixIcon: const Icon(
+                              Icons.email_outlined,
+                              color: AppColors.mutedBrown,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide(
-                                color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                                color: isKitchen
+                                    ? AppColors.kitchenBorder
+                                    : AppColors.line,
                                 width: isKitchen ? 2 : 1,
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide(
-                                color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                                color: isKitchen
+                                    ? AppColors.kitchenBorder
+                                    : AppColors.line,
                                 width: isKitchen ? 2 : 1,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                                width: 2,
+                              ),
                             ),
                           ),
                         ),
@@ -458,7 +497,11 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(Icons.error_outline, size: 16, color: AppColors.chiliRed),
+                              const Icon(
+                                Icons.error_outline,
+                                size: 16,
+                                color: AppColors.chiliRed,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 _emailError!,
@@ -479,7 +522,9 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                            color: isKitchen
+                                ? AppColors.kitchenText
+                                : AppColors.darkBrown,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -488,16 +533,25 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                           obscureText: _obscurePassword,
                           style: GoogleFonts.inter(
                             fontSize: 15,
-                            color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                            color: isKitchen
+                                ? AppColors.kitchenText
+                                : AppColors.darkBrown,
                           ),
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: isKitchen ? Colors.white : AppColors.paperCard,
+                            fillColor: isKitchen
+                                ? Colors.white
+                                : AppColors.paperCard,
                             hintText: '••••••••',
-                            prefixIcon: const Icon(Icons.lock_outline, color: AppColors.mutedBrown),
+                            prefixIcon: const Icon(
+                              Icons.lock_outline,
+                              color: AppColors.mutedBrown,
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
                                 color: AppColors.mutedBrown,
                               ),
                               onPressed: () {
@@ -506,24 +560,34 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                                 });
                               },
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide(
-                                color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                                color: isKitchen
+                                    ? AppColors.kitchenBorder
+                                    : AppColors.line,
                                 width: isKitchen ? 2 : 1,
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
                               borderSide: BorderSide(
-                                color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                                color: isKitchen
+                                    ? AppColors.kitchenBorder
+                                    : AppColors.line,
                                 width: isKitchen ? 2 : 1,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                                width: 2,
+                              ),
                             ),
                           ),
                         ),
@@ -531,7 +595,11 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(Icons.error_outline, size: 16, color: AppColors.chiliRed),
+                              const Icon(
+                                Icons.error_outline,
+                                size: 16,
+                                color: AppColors.chiliRed,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 _passwordError!,
@@ -561,9 +629,9 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                             ),
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
 
-                        // Primary Login Pill Button
+                        // Primary Login / Continue Button
                         SizedBox(
                           width: double.infinity,
                           height: 56,
@@ -571,11 +639,13 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               elevation: isKitchen ? 0 : 2,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
                             ),
                             onPressed: _handleLogin,
                             child: Text(
-                              _selectedDemoRole == UserRole.owner ? 'Login as Owner' : 'Login as Staff',
+                              'Magpatuloy / Log in',
                               style: GoogleFonts.inter(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
@@ -586,58 +656,17 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
                         ),
                         const SizedBox(height: 24),
 
-                        // Social Buttons Divider
-                        Row(
-                          children: [
-                            const Expanded(child: Divider(color: AppColors.line)),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                'o kaya mag-sign in gamit ang',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: AppColors.mutedBrown,
-                                ),
-                              ),
-                            ),
-                            const Expanded(child: Divider(color: AppColors.line)),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Social Buttons Row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildSocialButton(
-                              icon: Icons.facebook,
-                              name: 'Facebook',
-                              onTap: () => _showSocialToast('Facebook'),
-                            ),
-                            const SizedBox(width: 16),
-                            _buildSocialButton(
-                              icon: Icons.g_mobiledata,
-                              name: 'Google',
-                              onTap: () => _showSocialToast('Google'),
-                            ),
-                            const SizedBox(width: 16),
-                            _buildSocialButton(
-                              icon: Icons.apple,
-                              name: 'Apple',
-                              onTap: () => _showSocialToast('Apple'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Sign up link
+                        // Sign Up Link
                         Center(
                           child: TextButton(
                             onPressed: _showSignUpSheet,
                             child: RichText(
                               text: TextSpan(
                                 text: 'Walang account? ',
-                                style: GoogleFonts.inter(fontSize: 14, color: AppColors.mutedBrown),
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: AppColors.mutedBrown,
+                                ),
                                 children: [
                                   TextSpan(
                                     text: 'Mag-sign up',
@@ -659,54 +688,6 @@ class _LoginViewState extends State<LoginView> with SingleTickerProviderStateMix
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildRoleTab({
-    required UserRole role,
-    required String title,
-    required bool isSelected,
-    required bool isKitchen,
-  }) {
-    return GestureDetector(
-      onTap: () => _onRoleToggle(role),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(26),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : (isKitchen ? AppColors.kitchenText : AppColors.darkBrown),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialButton({
-    required IconData icon,
-    required String name,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.line),
-        ),
-        child: Icon(icon, color: AppColors.darkBrown, size: 24),
       ),
     );
   }

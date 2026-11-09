@@ -9,6 +9,12 @@ class Order {
   final double total;
   final OrderStatus status;
   final PaymentStatus payStatus;
+  final PaymentMethod paymentMethod;
+  final String? referenceNumber;
+  final String? staffId;
+  final String? staffName;
+  final bool isVoided;
+  final String? voidReason;
   final String? customerName;
   final DateTime createdAt;
 
@@ -20,6 +26,12 @@ class Order {
     required this.total,
     required this.status,
     required this.payStatus,
+    this.paymentMethod = PaymentMethod.cash,
+    this.referenceNumber,
+    this.staffId,
+    this.staffName,
+    this.isVoided = false,
+    this.voidReason,
     this.customerName,
     required this.createdAt,
   });
@@ -34,6 +46,12 @@ class Order {
     double? total,
     OrderStatus? status,
     PaymentStatus? payStatus,
+    PaymentMethod? paymentMethod,
+    String? referenceNumber,
+    String? staffId,
+    String? staffName,
+    bool? isVoided,
+    String? voidReason,
     String? customerName,
     DateTime? createdAt,
   }) {
@@ -45,6 +63,12 @@ class Order {
       total: total ?? this.total,
       status: status ?? this.status,
       payStatus: payStatus ?? this.payStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      referenceNumber: referenceNumber ?? this.referenceNumber,
+      staffId: staffId ?? this.staffId,
+      staffName: staffName ?? this.staffName,
+      isVoided: isVoided ?? this.isVoided,
+      voidReason: voidReason ?? this.voidReason,
       customerName: customerName ?? this.customerName,
       createdAt: createdAt ?? this.createdAt,
     );

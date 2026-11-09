@@ -91,6 +91,8 @@ class SeedData {
         total: 110.0,
         status: OrderStatus.preparing,
         payStatus: PaymentStatus.paid,
+        paymentMethod: PaymentMethod.cash,
+        staffName: 'Ana Reyes',
         createdAt: DateTime.now().subtract(const Duration(minutes: 18)),
       ),
       Order(
@@ -104,6 +106,9 @@ class SeedData {
         total: 240.0,
         status: OrderStatus.ready,
         payStatus: PaymentStatus.paid,
+        paymentMethod: PaymentMethod.gcash,
+        referenceNumber: 'GCASH-9823412',
+        staffName: 'Ana Reyes',
         createdAt: DateTime.now().subtract(const Duration(minutes: 32)),
       ),
       Order(
@@ -118,6 +123,8 @@ class SeedData {
         total: 290.0,
         status: OrderStatus.served,
         payStatus: PaymentStatus.paid,
+        paymentMethod: PaymentMethod.cash,
+        staffName: 'Ana Reyes',
         createdAt: DateTime.now().subtract(const Duration(hours: 1, minutes: 10)),
       ),
       Order(
@@ -131,7 +138,9 @@ class SeedData {
         total: 220.0,
         status: OrderStatus.served,
         payStatus: PaymentStatus.onDebt,
+        paymentMethod: PaymentMethod.utang,
         customerName: 'Mang Kanor',
+        staffName: 'Ana Reyes',
         createdAt: DateTime.now().subtract(const Duration(hours: 2)),
       ),
     ];
