@@ -28,6 +28,19 @@ class KarinderyaController extends ChangeNotifier {
   String _currentStaffId = 'staff-2';
   ShiftRecord? _currentShift;
 
+  // Owner Analytics & Filter State
+  DateTime _selectedSalesDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
+  DishCategory _ownerMenuCategory = DishCategory.ulam;
+  String _ownerMenuSearchQuery = '';
+  OwnerMenuSortOption _ownerMenuSort = OwnerMenuSortOption.defaultOrder;
+  OwnerMenuAvailabilityFilter _ownerMenuAvailability = OwnerMenuAvailabilityFilter.all;
+  String _ownerStaffSearchQuery = '';
+  String _ownerUtangSearchQuery = '';
+
   // Active Order Context
   String _activeTableNum = '04';
   OrderKind _activeOrderKind = OrderKind.dineIn;
@@ -139,6 +152,184 @@ class KarinderyaController extends ChangeNotifier {
     return _orders.where((o) => !o.isVoided && o.status == OrderStatus.ready).toList();
   }
 
+  // Owner Reactive Sales Date Filtering
+  DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
+
+  bool _isSameCalendarDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  DateTime get selectedSalesDate => _dateOnly(_selectedSalesDate);
+
+  bool get isSelectedSalesDateToday => _isSameCalendarDate(_selectedSalesDate, DateTime.now());
+
+  void setSalesDate(DateTime date) {
+    _selectedSalesDate = _dateOnly(date);
+    notifyListeners();
+  }
+
+  List<Order> get ordersForSelectedDate {
+    return _orders
+        .where((o) => !o.isVoided && _isSameCalendarDate(o.createdAt, _selectedSalesDate))
+        .toList();
+  }
+
+  double get totalSalesForSelectedDate {
+    return ordersForSelectedDate.fold(0.0, (sum, o) => sum + o.total);
+  }
+
+  double get paidSalesForSelectedDate {
+    return ordersForSelectedDate
+        .where((o) => o.payStatus == PaymentStatus.paid)
+        .fold(0.0, (sum, o) => sum + o.total);
+  }
+
+  double get cashSalesForSelectedDate {
+    return ordersForSelectedDate
+        .where((o) => o.paymentMethod == PaymentMethod.cash)
+        .fold(0.0, (sum, o) => sum + o.total);
+  }
+
+  double get utangSalesForSelectedDate {
+    return ordersForSelectedDate
+        .where((o) => o.payStatus == PaymentStatus.onDebt)
+        .fold(0.0, (sum, o) => sum + o.total);
+  }
+
+  ({String name, int count, double revenue})? get topDishForSelectedDate {
+    final counts = <String, int>{};
+    final revenues = <String, double>{};
+    for (final order in ordersForSelectedDate) {
+      for (final item in order.items) {
+        final name = item.dish.name;
+        counts[name] = (counts[name] ?? 0) + item.quantity;
+        revenues[name] = (revenues[name] ?? 0.0) + item.lineTotal;
+      }
+    }
+    if (counts.isEmpty) return null;
+    final topEntry = counts.entries.reduce((a, b) => a.value >= b.value ? a : b);
+    return (
+      name: topEntry.key,
+      count: topEntry.value,
+      revenue: revenues[topEntry.key] ?? 0.0,
+    );
+  }
+
+  // Owner Menu Setup: Strictly Categorized + Search & Sort State
+  DishCategory get ownerMenuCategory => _ownerMenuCategory;
+  String get ownerMenuSearchQuery => _ownerMenuSearchQuery;
+  OwnerMenuSortOption get ownerMenuSort => _ownerMenuSort;
+  OwnerMenuAvailabilityFilter get ownerMenuAvailability => _ownerMenuAvailability;
+
+  bool get hasActiveOwnerMenuFilter =>
+      _ownerMenuSort != OwnerMenuSortOption.defaultOrder ||
+      _ownerMenuAvailability != OwnerMenuAvailabilityFilter.all;
+
+  void setOwnerMenuCategory(DishCategory category) {
+    if (category == DishCategory.all) return;
+    _ownerMenuCategory = category;
+    notifyListeners();
+  }
+
+  void setOwnerMenuSearchQuery(String query) {
+    _ownerMenuSearchQuery = query;
+    notifyListeners();
+  }
+
+  void setOwnerMenuSort(OwnerMenuSortOption sort) {
+    _ownerMenuSort = sort;
+    notifyListeners();
+  }
+
+  void setOwnerMenuAvailability(OwnerMenuAvailabilityFilter availability) {
+    _ownerMenuAvailability = availability;
+    notifyListeners();
+  }
+
+  void resetOwnerMenuFilters() {
+    _ownerMenuSort = OwnerMenuSortOption.defaultOrder;
+    _ownerMenuAvailability = OwnerMenuAvailabilityFilter.all;
+    notifyListeners();
+  }
+
+  int getOwnerDishCountForCategory(DishCategory category) {
+    final query = _ownerMenuSearchQuery.trim().toLowerCase();
+    return _dishes.where((dish) {
+      if (dish.category != category) return false;
+      if (query.isNotEmpty && !dish.name.toLowerCase().contains(query)) return false;
+      if (_ownerMenuAvailability == OwnerMenuAvailabilityFilter.availableOnly && dish.isSoldOut) {
+        return false;
+      }
+      if (_ownerMenuAvailability == OwnerMenuAvailabilityFilter.soldOutOnly && !dish.isSoldOut) {
+        return false;
+      }
+      return true;
+    }).length;
+  }
+
+  List<Dish> get filteredOwnerDishes {
+    final query = _ownerMenuSearchQuery.trim().toLowerCase();
+    final filtered = _dishes.where((dish) {
+      if (dish.category != _ownerMenuCategory) return false;
+      if (query.isNotEmpty && !dish.name.toLowerCase().contains(query)) return false;
+      if (_ownerMenuAvailability == OwnerMenuAvailabilityFilter.availableOnly && dish.isSoldOut) {
+        return false;
+      }
+      if (_ownerMenuAvailability == OwnerMenuAvailabilityFilter.soldOutOnly && !dish.isSoldOut) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    switch (_ownerMenuSort) {
+      case OwnerMenuSortOption.defaultOrder:
+        break;
+      case OwnerMenuSortOption.nameAZ:
+        filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      case OwnerMenuSortOption.priceLowToHigh:
+        filtered.sort((a, b) => a.price.compareTo(b.price));
+      case OwnerMenuSortOption.priceHighToLow:
+        filtered.sort((a, b) => b.price.compareTo(a.price));
+      case OwnerMenuSortOption.stockLowToHigh:
+        filtered.sort((a, b) => a.stock.compareTo(b.stock));
+      case OwnerMenuSortOption.stockHighToLow:
+        filtered.sort((a, b) => b.stock.compareTo(a.stock));
+    }
+
+    return filtered;
+  }
+
+  // Owner Staff Directory Search
+  String get ownerStaffSearchQuery => _ownerStaffSearchQuery;
+
+  void setOwnerStaffSearchQuery(String query) {
+    _ownerStaffSearchQuery = query;
+    notifyListeners();
+  }
+
+  List<StaffMember> get filteredStaff {
+    final query = _ownerStaffSearchQuery.trim().toLowerCase();
+    if (query.isEmpty) return List.unmodifiable(_staff);
+    return _staff.where((s) => s.name.toLowerCase().contains(query)).toList();
+  }
+
+  // Owner Utang Ledger: Search & Auto-Clear Settled Debts (balance > 0)
+  String get ownerUtangSearchQuery => _ownerUtangSearchQuery;
+
+  void setOwnerUtangSearchQuery(String query) {
+    _ownerUtangSearchQuery = query;
+    notifyListeners();
+  }
+
+  List<Customer> get activeDebtors {
+    final query = _ownerUtangSearchQuery.trim().toLowerCase();
+    return _customers.where((c) {
+      if (c.balance <= 0) return false;
+      if (query.isEmpty) return true;
+      return c.name.toLowerCase().contains(query) ||
+          c.contactInfo.toLowerCase().contains(query);
+    }).toList();
+  }
+
   // State Transition Handlers
   void setScreen(ScreenState newScreen) {
     _screen = newScreen;
@@ -242,6 +433,13 @@ class KarinderyaController extends ChangeNotifier {
     _screen = ScreenState.login;
     _staffTabIndex = 0;
     _ownerTabIndex = 0;
+    _selectedSalesDate = _dateOnly(DateTime.now());
+    _ownerMenuCategory = DishCategory.ulam;
+    _ownerMenuSearchQuery = '';
+    _ownerMenuSort = OwnerMenuSortOption.defaultOrder;
+    _ownerMenuAvailability = OwnerMenuAvailabilityFilter.all;
+    _ownerStaffSearchQuery = '';
+    _ownerUtangSearchQuery = '';
     notifyListeners();
   }
 
@@ -609,6 +807,33 @@ class KarinderyaController extends ChangeNotifier {
       );
     }
 
+    notifyListeners();
+  }
+
+  void addDebtor({
+    required String name,
+    required String contactInfo,
+    required double initialDebt,
+  }) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final now = DateTime.now();
+    final formattedDate = '${months[now.month - 1]} ${now.day}, ${now.year}';
+
+    _customers.insert(
+      0,
+      Customer(
+        id: 'cust-${now.millisecondsSinceEpoch}',
+        name: name.trim(),
+        contactInfo: contactInfo.trim(),
+        balance: initialDebt,
+        originalTotal: initialDebt,
+        openOrders: 1,
+        date: formattedDate,
+      ),
+    );
     notifyListeners();
   }
 

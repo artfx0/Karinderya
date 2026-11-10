@@ -406,36 +406,41 @@ class _HeaderBarState extends State<HeaderBar> {
                   const SizedBox(width: 8),
 
                   // Live Philippine Wall Clock Badge (PST, UTC+8)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: const BoxDecoration(
-                          color: AppColors.leafGreen,
-                          shape: BoxShape.circle,
-                        ),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              color: AppColors.leafGreen,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            formattedTime,
+                            style: GoogleFonts.fredoka(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '• $formattedDate PST',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.mutedBrown,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        formattedTime,
-                        style: GoogleFonts.fredoka(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '• $formattedDate PST',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.mutedBrown,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),

@@ -143,6 +143,96 @@ class SeedData {
         staffName: 'Ana Reyes',
         createdAt: DateTime.now().subtract(const Duration(hours: 2)),
       ),
+      // Historical Orders: Yesterday
+      Order(
+        id: '1035',
+        tableNum: '05',
+        kind: OrderKind.dineIn,
+        items: [
+          CartItem(dish: dishes[1], quantity: 3), // Pork Sinigang 330
+          CartItem(dish: dishes[3], quantity: 4), // Rice 80
+          CartItem(dish: dishes[5], quantity: 2), // Sago't Gulaman 50
+        ],
+        total: 460.0,
+        status: OrderStatus.served,
+        payStatus: PaymentStatus.paid,
+        paymentMethod: PaymentMethod.cash,
+        staffName: 'Ana Reyes',
+        createdAt: DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day - 1,
+          12,
+          15,
+        ),
+      ),
+      Order(
+        id: '1034',
+        tableNum: 'Takeout',
+        kind: OrderKind.takeout,
+        items: [
+          CartItem(dish: dishes[2], quantity: 4), // Lumpia 240
+          CartItem(dish: dishes[5], quantity: 2), // Drinks 50
+        ],
+        total: 290.0,
+        status: OrderStatus.served,
+        payStatus: PaymentStatus.paid,
+        paymentMethod: PaymentMethod.maya,
+        referenceNumber: 'MAYA-4451902',
+        staffName: 'Maria Santos',
+        createdAt: DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day - 1,
+          17,
+          45,
+        ),
+      ),
+      // Historical Orders: 2 Days Ago
+      Order(
+        id: '1031',
+        tableNum: '01',
+        kind: OrderKind.dineIn,
+        items: [
+          CartItem(dish: dishes[0], quantity: 5), // Adobo 450
+          CartItem(dish: dishes[3], quantity: 5), // Rice 100
+        ],
+        total: 550.0,
+        status: OrderStatus.served,
+        payStatus: PaymentStatus.paid,
+        paymentMethod: PaymentMethod.gcash,
+        referenceNumber: 'GCASH-7712304',
+        staffName: 'Ana Reyes',
+        createdAt: DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day - 2,
+          11,
+          30,
+        ),
+      ),
+      Order(
+        id: '1030',
+        tableNum: '02',
+        kind: OrderKind.dineIn,
+        items: [
+          CartItem(dish: dishes[1], quantity: 1), // Sinigang 110
+          CartItem(dish: dishes[3], quantity: 2), // Rice 40
+        ],
+        total: 150.0,
+        status: OrderStatus.served,
+        payStatus: PaymentStatus.onDebt,
+        paymentMethod: PaymentMethod.utang,
+        customerName: 'Ate Gina',
+        staffName: 'Ana Reyes',
+        createdAt: DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day - 2,
+          18,
+          20,
+        ),
+      ),
     ];
   }
 
@@ -151,6 +241,7 @@ class SeedData {
         const Customer(
           id: 'cust-1',
           name: 'Mang Kanor',
+          contactInfo: '0917-123-4567',
           balance: 350.0,
           originalTotal: 500.0,
           openOrders: 2,
@@ -159,6 +250,7 @@ class SeedData {
         const Customer(
           id: 'cust-2',
           name: 'Ate Gina',
+          contactInfo: '0918-234-5678',
           balance: 120.0,
           originalTotal: 120.0,
           openOrders: 1,
@@ -167,6 +259,7 @@ class SeedData {
         const Customer(
           id: 'cust-3',
           name: 'Tito Boy',
+          contactInfo: '0919-345-6789',
           balance: 240.0,
           originalTotal: 300.0,
           openOrders: 1,
@@ -175,6 +268,7 @@ class SeedData {
         const Customer(
           id: 'cust-4',
           name: 'Kuya Jojo',
+          contactInfo: '0920-456-7890',
           balance: 0.0,
           originalTotal: 280.0,
           openOrders: 0,

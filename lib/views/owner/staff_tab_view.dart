@@ -5,12 +5,32 @@ import '../../models/app_state.dart';
 import '../../models/staff_member.dart';
 import '../../theme/app_theme.dart';
 
-class StaffTabView extends StatelessWidget {
+class StaffTabView extends StatefulWidget {
   final KarinderyaController controller;
 
   const StaffTabView({super.key, required this.controller});
 
+  @override
+  State<StaffTabView> createState() => _StaffTabViewState();
+}
+
+class _StaffTabViewState extends State<StaffTabView> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.text = widget.controller.ownerStaffSearchQuery;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   void _showAddStaffSheet(BuildContext context) {
+    final controller = widget.controller;
     final nameController = TextEditingController();
     UserRole selectedRole = UserRole.staff;
     String? error;
@@ -138,8 +158,9 @@ class StaffTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     final isKitchen = controller.kitchenMode;
-    final staffList = controller.staff;
+    final staffList = controller.filteredStaff;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -151,14 +172,18 @@ class StaffTabView extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Mga Kawani (${staffList.length})',
-                  style: GoogleFonts.fredoka(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                Expanded(
+                  child: Text(
+                    'Mga Kawani (${staffList.length})',
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.fredoka(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -173,14 +198,79 @@ class StaffTabView extends StatelessWidget {
             ),
           ),
 
+          // Real-Time Employee Search Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              onChanged: controller.setOwnerStaffSearchQuery,
+              decoration: InputDecoration(
+                hintText: 'Maghanap ng pangalan ng kawani...',
+                prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.mutedBrown),
+                suffixIcon: controller.ownerStaffSearchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          controller.setOwnerStaffSearchQuery('');
+                        },
+                      )
+                    : null,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                filled: true,
+                fillColor: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                    width: isKitchen ? 2 : 1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           // Staff Cards List
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-              itemCount: staffList.length,
-              separatorBuilder: (context, _) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final member = staffList[index];
+            child: staffList.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.person_search, size: 52, color: AppColors.mutedBrown),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Walang kawaning nahanap',
+                            style: GoogleFonts.fredoka(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Subukang maglagay ng ibang pangalan sa search bar.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(fontSize: 13, color: AppColors.mutedBrown),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                    itemCount: staffList.length,
+                    separatorBuilder: (context, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final member = staffList[index];
 
                 return Container(
                   padding: const EdgeInsets.all(16),

@@ -1,6 +1,7 @@
 class Customer {
   final String id;
   final String name;
+  final String contactInfo;
   final double balance;
   final double originalTotal;
   final int openOrders;
@@ -9,6 +10,7 @@ class Customer {
   const Customer({
     required this.id,
     required this.name,
+    this.contactInfo = '',
     required this.balance,
     required this.originalTotal,
     required this.openOrders,
@@ -36,6 +38,7 @@ class Customer {
   Customer copyWith({
     String? id,
     String? name,
+    String? contactInfo,
     double? balance,
     double? originalTotal,
     int? openOrders,
@@ -44,6 +47,7 @@ class Customer {
     return Customer(
       id: id ?? this.id,
       name: name ?? this.name,
+      contactInfo: contactInfo ?? this.contactInfo,
       balance: balance ?? this.balance,
       originalTotal: originalTotal ?? this.originalTotal,
       openOrders: openOrders ?? this.openOrders,

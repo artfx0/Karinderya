@@ -43,3 +43,18 @@ enum OrderKind {
   dineIn,
   takeout,
 }
+
+enum OwnerMenuSortOption {
+  defaultOrder,
+  nameAZ,
+  priceLowToHigh,
+  priceHighToLow,
+  stockLowToHigh,
+  stockHighToLow,
+}
+
+enum OwnerMenuAvailabilityFilter {
+  all,
+  availableOnly,
+  soldOutOnly,
+}

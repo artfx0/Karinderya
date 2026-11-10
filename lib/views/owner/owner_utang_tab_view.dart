@@ -4,12 +4,173 @@ import '../../controllers/karinderya_controller.dart';
 import '../../models/customer.dart';
 import '../../theme/app_theme.dart';
 
-class OwnerUtangTabView extends StatelessWidget {
+class OwnerUtangTabView extends StatefulWidget {
   final KarinderyaController controller;
 
   const OwnerUtangTabView({super.key, required this.controller});
 
+  @override
+  State<OwnerUtangTabView> createState() => _OwnerUtangTabViewState();
+}
+
+class _OwnerUtangTabViewState extends State<OwnerUtangTabView> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.text = widget.controller.ownerUtangSearchQuery;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _showAddDebtorSheet(BuildContext context) {
+    final controller = widget.controller;
+    final nameController = TextEditingController();
+    final contactController = TextEditingController();
+    final debtController = TextEditingController();
+    String? error;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Container(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            decoration: BoxDecoration(
+              color: controller.kitchenMode ? Colors.white : AppColors.paperCard,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border.all(
+                color: controller.kitchenMode ? AppColors.kitchenBorder : AppColors.line,
+                width: controller.kitchenMode ? 2.5 : 1.0,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.line,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Magdagdag ng Bagong May Utang',
+                  style: GoogleFonts.fredoka(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: controller.kitchenMode ? AppColors.kitchenText : AppColors.darkBrown,
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Pangalan (Name)',
+                    hintText: 'Halimbawa: Mang Tomas',
+                    filled: true,
+                    fillColor: AppColors.warmCream,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: contactController,
+                  decoration: InputDecoration(
+                    labelText: 'Contact Information (Phone / Address)',
+                    hintText: 'Halimbawa: 0917-555-8899',
+                    filled: true,
+                    fillColor: AppColors.warmCream,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: debtController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Initial Debt Amount',
+                    prefixText: '₱ ',
+                    hintText: '0',
+                    filled: true,
+                    fillColor: AppColors.warmCream,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(error!, style: GoogleFonts.inter(color: AppColors.chiliRed, fontSize: 12)),
+                ],
+                const SizedBox(height: 18),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                    ),
+                    onPressed: () {
+                      final name = nameController.text.trim();
+                      final contact = contactController.text.trim();
+                      final initialDebt = double.tryParse(debtController.text.trim());
+
+                      if (name.isEmpty || contact.isEmpty || initialDebt == null || initialDebt <= 0) {
+                        setSheetState(() {
+                          error = 'Paki-kumpleto ang pangalan, contact info, at wastong halaga ng utang.';
+                        });
+                        return;
+                      }
+
+                      controller.addDebtor(
+                        name: name,
+                        contactInfo: contact,
+                        initialDebt: initialDebt,
+                      );
+
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$name idinagdag sa listahan ng may utang!'),
+                          backgroundColor: AppColors.leafGreen,
+                        ),
+                      );
+                    },
+                    child: const Text('I-save ang Debtor'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showSettleDebtModal(BuildContext context, Customer customer) {
+    final controller = widget.controller;
     final payController = TextEditingController(text: customer.balance.toStringAsFixed(0));
     String? error;
 
@@ -33,6 +194,13 @@ class OwnerUtangTabView extends StatelessWidget {
                   'Suki: ${customer.name}',
                   style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
+                if (customer.contactInfo.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    customer.contactInfo,
+                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.mutedBrown),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
                   'Kasalukuyang Utang: ₱${customer.balance.toStringAsFixed(0)}',
@@ -92,15 +260,18 @@ class OwnerUtangTabView extends StatelessWidget {
                         children: [
                           const Icon(Icons.check_circle, color: Colors.white),
                           const SizedBox(width: 8),
-                          Text(
-                            'Payment recorded. Salamat po!',
-                            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                          Expanded(
+                            child: Text(
+                              'Payment recorded. Salamat po!',
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ],
                       ),
                       backgroundColor: AppColors.leafGreen,
                       duration: const Duration(seconds: 2),
                       behavior: SnackBarBehavior.floating,
+                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 76),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   );
@@ -116,12 +287,24 @@ class OwnerUtangTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
     final isKitchen = controller.kitchenMode;
-    final customers = controller.customers;
-    final totalOutstanding = customers.fold(0.0, (sum, c) => sum + c.balance);
+    // Strictly displays active debtors only (auto-clears settled debts where balance <= 0)
+    final activeDebtors = controller.activeDebtors;
+    final totalOutstanding = controller.customers.fold(0.0, (sum, c) => sum + c.balance);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.person_add),
+        label: Text(
+          'Add Debtor',
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+        ),
+        onPressed: () => _showAddDebtorSheet(context),
+      ),
       body: Column(
         children: [
           // Total Outstanding Card
@@ -140,15 +323,19 @@ class OwnerUtangTabView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'TOTAL OUTSTANDING (UTANG)',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0,
-                          color: AppColors.warmCream.withValues(alpha: 0.8),
+                      Expanded(
+                        child: Text(
+                          'TOTAL OUTSTANDING (UTANG)',
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
+                            color: AppColors.warmCream.withValues(alpha: 0.8),
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
@@ -188,28 +375,80 @@ class OwnerUtangTabView extends StatelessWidget {
             ),
           ),
 
-          // Customer Debts List
+          // Real-Time Debtor Search Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              onChanged: controller.setOwnerUtangSearchQuery,
+              decoration: InputDecoration(
+                hintText: 'Maghanap ng may utang o contact info...',
+                prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.mutedBrown),
+                suffixIcon: controller.ownerUtangSearchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          controller.setOwnerUtangSearchQuery('');
+                        },
+                      )
+                    : null,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                filled: true,
+                fillColor: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                    width: isKitchen ? 2 : 1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Active Customer Debts List (Zero settled profiles)
           Expanded(
-            child: customers.isEmpty || (totalOutstanding == 0)
+            child: activeDebtors.isEmpty
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.celebration, color: AppColors.leafGreen, size: 64),
+                          Icon(
+                            controller.ownerUtangSearchQuery.isNotEmpty
+                                ? Icons.search_off
+                                : Icons.celebration,
+                            color: controller.ownerUtangSearchQuery.isNotEmpty
+                                ? AppColors.mutedBrown
+                                : AppColors.leafGreen,
+                            size: 60,
+                          ),
                           const SizedBox(height: 12),
                           Text(
-                            'Wala nang utang. Salamat po!',
+                            controller.ownerUtangSearchQuery.isNotEmpty
+                                ? 'Walang suking nahanap'
+                                : 'Wala nang utang. Salamat po!',
+                            textAlign: TextAlign.center,
                             style: GoogleFonts.fredoka(
-                              fontSize: 22,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: AppColors.darkBrown,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Lahat ng suki ay nakapagbayad na.',
+                            controller.ownerUtangSearchQuery.isNotEmpty
+                                ? 'Subukang maglagay ng ibang pangalan sa search bar.'
+                                : 'Lahat ng suki ay nakapagbayad na.',
+                            textAlign: TextAlign.center,
                             style: GoogleFonts.inter(color: AppColors.mutedBrown),
                           ),
                         ],
@@ -217,15 +456,14 @@ class OwnerUtangTabView extends StatelessWidget {
                     ),
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                    itemCount: customers.length,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+                    itemCount: activeDebtors.length,
                     separatorBuilder: (context, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
-                      final customer = customers[index];
-                      final isPaid = customer.isPaidInFull;
+                      final customer = activeDebtors[index];
 
                       return InkWell(
-                        onTap: isPaid ? null : () => _showSettleDebtModal(context, customer),
+                        onTap: () => _showSettleDebtModal(context, customer),
                         borderRadius: BorderRadius.circular(18),
                         child: Container(
                           padding: const EdgeInsets.all(16),
@@ -243,14 +481,12 @@ class OwnerUtangTabView extends StatelessWidget {
                               Row(
                                 children: [
                                   CircleAvatar(
-                                    backgroundColor: isPaid
-                                        ? AppColors.leafGreen.withValues(alpha: 0.15)
-                                        : AppColors.chiliRed.withValues(alpha: 0.15),
+                                    backgroundColor: AppColors.chiliRed.withValues(alpha: 0.15),
                                     child: Text(
                                       customer.avatarInitials,
                                       style: GoogleFonts.inter(
                                         fontWeight: FontWeight.bold,
-                                        color: isPaid ? AppColors.leafGreen : AppColors.chiliRed,
+                                        color: AppColors.chiliRed,
                                       ),
                                     ),
                                   ),
@@ -267,8 +503,19 @@ class OwnerUtangTabView extends StatelessWidget {
                                             color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
                                           ),
                                         ),
+                                        if (customer.contactInfo.isNotEmpty)
+                                          Text(
+                                            customer.contactInfo,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.darkBrown.withValues(alpha: 0.75),
+                                            ),
+                                          ),
                                         Text(
                                           '${customer.openOrders} bukas na order • ${customer.date}',
+                                          overflow: TextOverflow.ellipsis,
                                           style: GoogleFonts.inter(fontSize: 12, color: AppColors.mutedBrown),
                                         ),
                                       ],
@@ -277,41 +524,23 @@ class OwnerUtangTabView extends StatelessWidget {
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      if (isPaid) ...[
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.leafGreen.withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Text(
-                                            'Bayad na',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.leafGreen,
-                                            ),
-                                          ),
+                                      Text(
+                                        '₱${customer.balance.toStringAsFixed(0)}',
+                                        style: GoogleFonts.fredoka(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.chiliRed,
                                         ),
-                                      ] else ...[
-                                        Text(
-                                          '₱${customer.balance.toStringAsFixed(0)}',
-                                          style: GoogleFonts.fredoka(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.chiliRed,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Tap to pay',
-                                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.primary),
-                                        ),
-                                      ],
+                                      ),
+                                      Text(
+                                        'Tap to pay',
+                                        style: GoogleFonts.inter(fontSize: 11, color: AppColors.primary),
+                                      ),
                                     ],
                                   ),
                                 ],
                               ),
-                              if (!isPaid && customer.originalTotal > 0) ...[
+                              if (customer.originalTotal > 0) ...[
                                 const SizedBox(height: 12),
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(4),

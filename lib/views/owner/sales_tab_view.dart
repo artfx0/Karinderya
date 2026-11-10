@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/karinderya_controller.dart';
 import '../../models/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/dashboard_live_clock.dart';
+import 'sales_detail_report_view.dart';
 
 class SalesTabView extends StatefulWidget {
   final KarinderyaController controller;
@@ -80,23 +82,105 @@ class _SalesTabViewState extends State<SalesTabView> {
     );
   }
 
-  void _openDrawer(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.lock_open, color: Colors.white),
-            const SizedBox(width: 8),
-            Text(
-              'Cash drawer opened.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-            ),
-          ],
+  String _formatDateLabel(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final target = DateTime(date.year, date.month, date.day);
+
+    final formatted = '${months[date.month - 1]} ${date.day}, ${date.year}';
+    if (target == today) return 'Ngayon • $formatted';
+    if (target == yesterday) return 'Kahapon • $formatted';
+    return formatted;
+  }
+
+  void _openReactiveCalendarSheet(BuildContext context) {
+    final controller = widget.controller;
+    final isKitchen = controller.kitchenMode;
+    final now = DateTime.now();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        decoration: BoxDecoration(
+          color: isKitchen ? Colors.white : AppColors.paperCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(
+            color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+            width: isKitchen ? 2.5 : 1.0,
+          ),
         ),
-        backgroundColor: AppColors.darkBrown,
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.line,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Pumili ng Petsa ng Benta',
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.fredoka(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      tooltip: 'Isara',
+                    ),
+                  ],
+                ),
+              ),
+              // Reactive CalendarDatePicker: zero Apply/Submit/Enter buttons
+              Theme(
+                data: Theme.of(ctx).copyWith(
+                  colorScheme: ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: isKitchen ? Colors.white : AppColors.paperCard,
+                    onSurface: AppColors.darkBrown,
+                  ),
+                ),
+                child: CalendarDatePicker(
+                  initialDate: controller.selectedSalesDate,
+                  firstDate: DateTime(2024, 1, 1),
+                  lastDate: DateTime(now.year, now.month, now.day),
+                  onDateChanged: (pickedDate) {
+                    controller.setSalesDate(pickedDate);
+                    Navigator.pop(ctx);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -105,23 +189,23 @@ class _SalesTabViewState extends State<SalesTabView> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final isKitchen = controller.kitchenMode;
+    final selectedDate = controller.selectedSalesDate;
+    final isToday = controller.isSelectedSalesDateToday;
 
-    // Sales Calculations
-    final totalSales = controller.orders.fold(0.0, (sum, o) => sum + o.total);
-    final cashSales = controller.orders
-        .where((o) => o.payStatus == PaymentStatus.paid)
-        .fold(0.0, (sum, o) => sum + o.total);
-    final utangSales = controller.orders
-        .where((o) => o.payStatus == PaymentStatus.onDebt)
-        .fold(0.0, (sum, o) => sum + o.total);
+    // Date-Scoped Reactive Sales Calculations
+    final activeOrders = controller.ordersForSelectedDate;
+    final totalSales = controller.totalSalesForSelectedDate;
+    final cashSales = controller.cashSalesForSelectedDate;
+    final activeUtangTotal = controller.customers.fold(0.0, (sum, c) => sum + c.balance);
+    final topDish = controller.topDishForSelectedDate;
 
     final goal = controller.dailyGoal;
     final goalRatio = (totalSales / goal).clamp(0.0, 1.0);
 
     // Dine-In vs Takeout
-    final dineInCount = controller.orders.where((o) => o.kind == OrderKind.dineIn).length;
-    final takeoutCount = controller.orders.where((o) => o.kind == OrderKind.takeout).length;
-    final totalOrdersCount = controller.orders.length;
+    final dineInCount = activeOrders.where((o) => o.kind == OrderKind.dineIn).length;
+    final takeoutCount = activeOrders.where((o) => o.kind == OrderKind.takeout).length;
+    final totalOrdersCount = activeOrders.length;
     final dineInPercent = totalOrdersCount > 0 ? (dineInCount / totalOrdersCount * 100).round() : 50;
     final takeoutPercent = 100 - dineInPercent;
 
@@ -136,344 +220,464 @@ class _SalesTabViewState extends State<SalesTabView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero Sales Card with Goal Ring
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isKitchen ? AppColors.kitchenBorder : AppColors.brandOrange,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: isKitchen
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: AppColors.brandOrange.withValues(alpha: 0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
+            // Live Digital Clock in Main Dashboard Body (no date, no location)
+            DashboardLiveClock(isKitchen: isKitchen),
+            const SizedBox(height: 12),
+
+            // Reactive Calendar Filter Pill (tapping a calendar day updates immediately)
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _openReactiveCalendarSheet(context),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                          width: isKitchen ? 2 : 1,
                         ),
-                      ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Today's sales",
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.warmCream.withValues(alpha: 0.85),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '₱${totalSales.toStringAsFixed(0)}',
-                          style: GoogleFonts.fredoka(
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.trending_up, color: Colors.white, size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '+12% vs kahapon',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_month, color: AppColors.primary, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _formatDateLabel(selectedDate),
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const Icon(Icons.arrow_drop_down, color: AppColors.mutedBrown, size: 20),
+                        ],
+                      ),
                     ),
                   ),
+                ),
+                if (!isToday) ...[
+                  const SizedBox(width: 8),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                      foregroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    onPressed: () => controller.setSalesDate(DateTime.now()),
+                    child: Text(
+                      'Today',
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 14),
 
-                  // Goal Progress Ring (Tappable to edit)
-                  InkWell(
-                    onTap: () => _showEditGoalDialog(context),
-                    borderRadius: BorderRadius.circular(40),
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      padding: const EdgeInsets.all(4),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            value: goalRatio,
-                            strokeWidth: 8,
-                            backgroundColor: Colors.white.withValues(alpha: 0.25),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            // Interactive Hero Sales Card with Goal Ring
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SalesDetailReportView(controller: controller),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(24),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isKitchen ? AppColors.kitchenBorder : AppColors.brandOrange,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: isKitchen
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: AppColors.brandOrange.withValues(alpha: 0.3),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
                           ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                        ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                '${(goalRatio * 100).round()}%',
-                                style: GoogleFonts.fredoka(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                              Flexible(
+                                child: Text(
+                                  isToday ? "Today's sales" : "Sales • ${_formatDateLabel(selectedDate)}",
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.warmCream.withValues(alpha: 0.9),
+                                  ),
                                 ),
                               ),
-                              Text(
-                                'of ₱${(goal / 1000).toStringAsFixed(1)}k',
-                                style: GoogleFonts.inter(fontSize: 9, color: Colors.white),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: Colors.white.withValues(alpha: 0.85),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '₱${totalSales.toStringAsFixed(0)}',
+                            style: GoogleFonts.fredoka(
+                              fontSize: 34,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.receipt_long, color: Colors.white, size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$totalOrdersCount orders recorded',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
 
-            // Quick Actions: Set Today's Menu & Open Drawer
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: isKitchen ? 0 : 2,
-                    ),
-                    icon: const Icon(Icons.restaurant_menu, size: 20),
-                    label: const Text('Set today’s menu'),
-                    onPressed: () => controller.setOwnerTabIndex(1), // Switch to Menu Setup
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.darkBrown,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(
-                        color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
-                        width: isKitchen ? 2 : 1.5,
-                      ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    icon: const Icon(Icons.point_of_sale, size: 20),
-                    label: const Text('Open drawer'),
-                    onPressed: () => _openDrawer(context),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Top-Selling Dish Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
-                  width: isKitchen ? 2 : 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.categoryUlam, width: 2),
-                      color: AppColors.warmCream,
-                    ),
-                    padding: const EdgeInsets.all(6),
-                    child: SvgPicture.asset('assets/adobo.svg'),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                    // Goal Progress Ring (Tappable independently to edit daily goal)
+                    InkWell(
+                      onTap: () => _showEditGoalDialog(context),
+                      borderRadius: BorderRadius.circular(40),
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        padding: const EdgeInsets.all(4),
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            const Icon(Icons.star, color: AppColors.mustard, size: 16),
-                            const SizedBox(width: 4),
+                            CircularProgressIndicator(
+                              value: goalRatio,
+                              strokeWidth: 8,
+                              backgroundColor: Colors.white.withValues(alpha: 0.25),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${(goalRatio * 100).round()}%',
+                                  style: GoogleFonts.fredoka(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  'of ₱${(goal / 1000).toStringAsFixed(1)}k',
+                                  style: GoogleFonts.inter(fontSize: 9, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Interactive Top-Selling Dish KPI Card -> Menu Setup
+            InkWell(
+              onTap: () => controller.setOwnerTabIndex(1),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                    width: isKitchen ? 2 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.categoryUlam, width: 2),
+                        color: AppColors.warmCream,
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: SvgPicture.asset('assets/adobo.svg'),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.star, color: AppColors.mustard, size: 16),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  'PINAKA-MABENTA (TOP SELLER)',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            topDish?.name ?? 'Wala pang benta',
+                            style: GoogleFonts.fredoka(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
+                            ),
+                          ),
+                          Text(
+                            topDish != null
+                                ? '${topDish.count} orders served (₱${topDish.revenue.toStringAsFixed(0)} total)'
+                                : 'Walang naitalang order sa petsang ito',
+                            style: GoogleFonts.inter(fontSize: 12, color: AppColors.mutedBrown),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppColors.mutedBrown),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Interactive Low Servings / Inventory KPI Card -> Menu Setup
+            InkWell(
+              onTap: () => controller.setOwnerTabIndex(1),
+              borderRadius: BorderRadius.circular(18),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                    width: isKitchen ? 2 : 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Imbentaryo / Paubos na:',
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: AppColors.mutedBrown, size: 20),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (controller.lowStockDishes.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.leafGreen.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.leafGreen.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.check_circle, color: AppColors.leafGreen, size: 16),
+                            const SizedBox(width: 6),
                             Text(
-                              'PINAKA-MABENTA (TOP SELLER)',
+                              'Sapat pa lahat ng ulam',
                               style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                                letterSpacing: 0.5,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.leafGreen,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Chicken Adobo',
-                          style: GoogleFonts.fredoka(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isKitchen ? AppColors.kitchenText : AppColors.darkBrown,
-                          ),
+                      )
+                    else
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: controller.lowStockDishes.map((dish) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Chip(
+                                avatar: const Icon(Icons.warning_amber_rounded, color: AppColors.chiliRed, size: 16),
+                                label: Text('${dish.name}: ${dish.stock} left'),
+                                backgroundColor: AppColors.chiliRed.withValues(alpha: 0.1),
+                                side: BorderSide(color: AppColors.chiliRed.withValues(alpha: 0.3)),
+                                labelStyle: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.chiliRed,
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
-                        Text(
-                          '15 orders served today (₱1,350 total)',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.mutedBrown),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Low Servings Chips Row
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Imbentaryo / Paubos na:',
-                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                if (controller.lowStockDishes.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.leafGreen.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.leafGreen.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.check_circle, color: AppColors.leafGreen, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Sapat pa lahat ng ulam',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.leafGreen,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: controller.lowStockDishes.map((dish) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Chip(
-                            avatar: const Icon(Icons.warning_amber_rounded, color: AppColors.chiliRed, size: 16),
-                            label: Text('${dish.name}: ${dish.stock} left'),
-                            backgroundColor: AppColors.chiliRed.withValues(alpha: 0.1),
-                            side: BorderSide(color: AppColors.chiliRed.withValues(alpha: 0.3)),
-                            labelStyle: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.chiliRed,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Cash Sales vs Utang Metric Cards Row
+            // Interactive Cash Sales vs Active Utang KPI Cards Row
             Row(
               children: [
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
-                        width: isKitchen ? 2 : 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Cash Sales',
-                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.mutedBrown),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '₱${cashSales.toStringAsFixed(0)}',
-                          style: GoogleFonts.fredoka(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.leafGreen,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SalesDetailReportView(
+                            controller: controller,
+                            focusMethod: PaymentMethod.cash,
+                            title: 'Cash Sales Report',
                           ),
                         ),
-                      ],
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                          width: isKitchen ? 2 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Cash Sales',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.mutedBrown),
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right, size: 16, color: AppColors.mutedBrown),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '₱${cashSales.toStringAsFixed(0)}',
+                            style: GoogleFonts.fredoka(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.leafGreen,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
-                        width: isKitchen ? 2 : 1,
+                  child: InkWell(
+                    onTap: () => controller.setOwnerTabIndex(3),
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isKitchen ? AppColors.kitchenSurface : AppColors.paperCard,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isKitchen ? AppColors.kitchenBorder : AppColors.line,
+                          width: isKitchen ? 2 : 1,
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Nailistang Utang',
-                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.mutedBrown),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '₱${utangSales.toStringAsFixed(0)}',
-                          style: GoogleFonts.fredoka(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.chiliRed,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Active Utang',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.mutedBrown),
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right, size: 16, color: AppColors.mutedBrown),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            '₱${activeUtangTotal.toStringAsFixed(0)}',
+                            style: GoogleFonts.fredoka(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.chiliRed,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -559,21 +763,34 @@ class _SalesTabViewState extends State<SalesTabView> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 6,
                     children: [
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(width: 12, height: 12, color: AppColors.primary),
                           const SizedBox(width: 6),
-                          Text('Dine-In ($dineInPercent%) - $dineInCount orders'),
+                          Flexible(
+                            child: Text(
+                              'Dine-In ($dineInPercent%) - $dineInCount orders',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(width: 12, height: 12, color: AppColors.mustard),
                           const SizedBox(width: 6),
-                          Text('Takeout ($takeoutPercent%) - $takeoutCount orders'),
+                          Flexible(
+                            child: Text(
+                              'Takeout ($takeoutPercent%) - $takeoutCount orders',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -600,10 +817,14 @@ class _SalesTabViewState extends State<SalesTabView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Cash Count Reconciliation',
-                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Text(
+                          'Cash Count Reconciliation',
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       _buildReconciliationBadge(diff),
                     ],
                   ),

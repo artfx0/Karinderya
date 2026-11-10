@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/karinderya_controller.dart';
-import '../../models/app_state.dart';
 import '../../theme/app_theme.dart';
 import 'menu_setup_view.dart';
 import 'owner_utang_tab_view.dart';
@@ -12,6 +11,52 @@ class OwnerDashboardView extends StatelessWidget {
   final KarinderyaController controller;
 
   const OwnerDashboardView({super.key, required this.controller});
+
+  void _showLogoutConfirmDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: controller.kitchenMode ? Colors.white : AppColors.paperCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Mag-log out?',
+          style: GoogleFonts.fredoka(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.darkBrown,
+          ),
+        ),
+        content: Text(
+          'Babalik sa login screen ng Karinderya POS.',
+          style: GoogleFonts.inter(fontSize: 14, color: AppColors.mutedBrown),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text(
+              'Kanselahin',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.darkBrown),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.chiliRed,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              controller.logout();
+            },
+            child: Text(
+              'Oo, mag-log out',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   String _getTimeGreeting() {
     final hour = DateTime.now().hour;
@@ -52,50 +97,57 @@ class OwnerDashboardView extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Title & Greeting
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Karinderya',
-                            style: GoogleFonts.fredoka(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.brandOrange.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              'OWNER',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.brandOrange,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'Karinderya',
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.fredoka(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        "Aling Nena's - ${_getTimeGreeting()}",
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: isKitchen ? AppColors.kitchenText : AppColors.mutedBrown,
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.brandOrange.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                'OWNER',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.brandOrange,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 2),
+                        Text(
+                          "Aling Nena's - ${_getTimeGreeting()}",
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: isKitchen ? AppColors.kitchenText : AppColors.mutedBrown,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
-                  // Actions: Kitchen Toggle & "Staff POS" Pill Button
+                  // Actions: Kitchen Toggle & Logout Button (Strict RBAC: no Staff POS routing)
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         icon: Icon(
@@ -106,23 +158,10 @@ class OwnerDashboardView extends StatelessWidget {
                         tooltip: 'Kitchen Mode',
                       ),
                       const SizedBox(width: 4),
-
-                      // "Staff POS" Pill Button
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          elevation: isKitchen ? 0 : 2,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          minimumSize: const Size(100, 44),
-                        ),
-                        icon: const Icon(Icons.point_of_sale, size: 18),
-                        label: Text(
-                          'Staff POS',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        onPressed: () => controller.setScreen(ScreenState.staff),
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: AppColors.chiliRed),
+                        onPressed: () => _showLogoutConfirmDialog(context),
+                        tooltip: 'Mag-log out',
                       ),
                     ],
                   ),
